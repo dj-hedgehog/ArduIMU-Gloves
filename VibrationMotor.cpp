@@ -23,7 +23,7 @@
 void VibrationMotor::init() {
     
   pinMode(VIBRATION_MOTOR_PIN,OUTPUT);
-    
+  VibrationMotor::pulse(0);    
 }
 
 void VibrationMotor::doTasks() {
