@@ -7,10 +7,10 @@
 // Includes
 
 #include "AHRS.h"
-#include "Calibration.h"
+//#include "Calibration.h"
 #include "FlexSensors.h"
-#include "I2CBus.h"
-#include "MPU6000.h"
+//#include "I2CBus.h"
+#include "MPU60X0.h"
 #include "Receive.h"
 #include "SimpleTimer.h"
 #include "Send.h"
@@ -19,6 +19,10 @@
 #include <EEPROM.h> // required by Calibration.cpp
 #include "LEDs.h"
 #include "VibrationMotor.h"
+
+// FreeIMU
+#include "FreeIMU.h"
+
 
 //------------------------------------------------------------------------------
 // Definitions
@@ -45,15 +49,15 @@ void setup() {
     // Init modules
     LEDs::init();
     FlexSensors::init();
-    MPU6000::init();
-    I2CBus::init();
-    Calibration::init();
+    //MPU6000::init();
+    //I2CBus::init();
+    //Calibration::init();
     VibrationMotor::init();
 
     // Init timer
     timer.setInterval(10, sampleTimerTasks);
     timer.setInterval(FLEX_SEND_RATE, Send::flexSensorData);
-    timer.setInterval(SENSOR_SEND_RATE, Send::sensorData);
+    //timer.setInterval(SENSOR_SEND_RATE, Send::sensorData);
     timer.setInterval(QUATERION_SEND_RATE, Send::quaternionData);
 
     // Indicate init complete
@@ -67,15 +71,16 @@ void loop() {
 
 void sampleTimerTasks() {
 
+    // old code
     // Read Sensor data
-    MPU6000::read();
-    I2CBus::readMagnetometer();
+    //MPU6000::read();
+    //I2CBus::readMagnetometer();
 
     // Calibrate data
-    Calibration::update();
+    //Calibration::update();
 
     // Update AHRS algorithm
-    ahrs.update(DegToRad(0.1f * Calibration::gyrX), DegToRad(0.1f * Calibration::gyrY), DegToRad(0.1f * Calibration::gyrZ), Calibration::accX, Calibration::accY, Calibration::accZ);
+    //ahrs.update(DegToRad(0.1f * Calibration::gyrX), DegToRad(0.1f * Calibration::gyrY), DegToRad(0.1f * Calibration::gyrZ), Calibration::accX, Calibration::accY, Calibration::accZ);
 }
 
 //------------------------------------------------------------------------------

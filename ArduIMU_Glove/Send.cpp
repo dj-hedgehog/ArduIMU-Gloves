@@ -91,6 +91,7 @@ void Send::flexSensorData() {
     Serial.write((uint8_t*)packet, packetLength);
 }
 
+/*
 void Send::sensorData() {
     char packet[128];
     int packetLength = 0;
@@ -152,6 +153,7 @@ void Send::sensorData() {
 #endif
     Serial.write((uint8_t*)packet, packetLength);
 }
+*/
 
 void Send::quaternionData() {
     char packet[64];

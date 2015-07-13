@@ -7,7 +7,6 @@
 // Includes
 
 #include <Arduino.h>
-#include "I2CBus.h"
 #include "Receive.h"
 #include "VibrationMotor.h"
 
@@ -43,6 +42,7 @@ void Receive::doTasks() {
         }
 
         // Decode LED packet
+        /*
         if (rxBufIndex >= LED_PACKET_LENGTH) {
             if ((inSync ? rxBuf[0] : rxBuf[rxBufIndex - LED_PACKET_LENGTH]) == 'L') {
                 if (calcChecksum(LED_PACKET_LENGTH) == 0) {
@@ -55,7 +55,7 @@ void Receive::doTasks() {
                     inSync = true;
                 }
             }
-        }
+        }*/
 
         // Decode vibration motor packet
         if (rxBufIndex >= VIB_PACKET_LEGNTH) {
