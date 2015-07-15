@@ -13,7 +13,7 @@ class Send {
     public:
         static void flexSensorData();
         static void sensorData();
-        static void quaternionData();
+        static void quaternionData(const float qArray[]);
         static void miscData(const char* const charArray);
     private:
         static void IntValToChars(char* const charArray, int* const index, int i);

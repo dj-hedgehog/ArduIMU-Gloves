@@ -17,7 +17,7 @@
 //------------------------------------------------------------------------------
 // Includes
 
-#include "AHRS.h"
+//#include "AHRS.h"
 #include <Arduino.h>
 #include "Calibration.h"
 #include "FlexSensors.h"
@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern AHRS ahrs;
+//extern AHRS ahrs;
 
 //------------------------------------------------------------------------------
 // Definitions
@@ -40,6 +40,12 @@ typedef union {
         char msb;
     };
 } IntUnion;
+
+typedef union {
+    float floatingPoint;
+    byte binary[4];
+} FloatUnion;
+
 
 //------------------------------------------------------------------------------
 // Methods
@@ -155,9 +161,50 @@ void Send::sensorData() {
 }
 */
 
-void Send::quaternionData() {
+void Send::quaternionData(const float qArray[]) {
     char packet[64];
     int packetLength = 0;
+    FloatUnion floatUnion;
+    packet[packetLength++] = 'Q';
+    floatUnion.floatingPoint = qArray[0];  // W
+    packet[packetLength++] = floatUnion.binary[0];
+    packet[packetLength++] = floatUnion.binary[1];
+    packet[packetLength++] = floatUnion.binary[2];
+    packet[packetLength++] = floatUnion.binary[3];
+    floatUnion.floatingPoint = qArray[1];  // X
+    packet[packetLength++] = floatUnion.binary[0];
+    packet[packetLength++] = floatUnion.binary[1];
+    packet[packetLength++] = floatUnion.binary[2];
+    packet[packetLength++] = floatUnion.binary[3];
+    floatUnion.floatingPoint = qArray[2];  // Y
+    packet[packetLength++] = floatUnion.binary[0];
+    packet[packetLength++] = floatUnion.binary[1];
+    packet[packetLength++] = floatUnion.binary[2];
+    packet[packetLength++] = floatUnion.binary[3];
+    floatUnion.floatingPoint = qArray[3];  // Z
+    packet[packetLength++] = floatUnion.binary[0];
+    packet[packetLength++] = floatUnion.binary[1];
+    packet[packetLength++] = floatUnion.binary[2];
+    packet[packetLength++] = floatUnion.binary[3]; 
+       
+    // add checksum
+    
+  
+/*
+ * 
+ * 
+void Send::miscData(const char* const charArray) {
+    char packet[64];
+    int packetLength = 0;
+    IntUnion intUnion;
+    packet[packetLength++] = 'M';
+    for(int i = 0; i < 8; i++) {
+        packet[packetLength++] = charArray[i];
+    }
+    packet[packetLength++] = calcChecksum(packet, packetLength);
+    Serial.write((uint8_t*)packet, packetLength);
+}
+OLD CODE
 #ifdef BINARY_PACKETS
     IntUnion intUnion;
     packet[packetLength++] = 'Q';
@@ -189,6 +236,7 @@ void Send::quaternionData() {
     IntValToChars(packet, &packetLength, calcChecksum(packet, packetLength));
     packet[packetLength++] = '\r';
 #endif
+*/
     Serial.write((uint8_t*)packet, packetLength);
 }
 
