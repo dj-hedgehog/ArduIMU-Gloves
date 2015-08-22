@@ -161,6 +161,19 @@ void Send::sensorData() {
 }
 */
 
+/**
+ * Notify that a button has been pushed
+ */
+void Send::buttonState(const byte buttonNr){
+  char packet[2];
+  int packetLength = 0;
+  
+  packet[packetLength++] = 'B';
+  packet[packetLength++] = buttonNr;
+  Serial.write((uint8_t*)packet, packetLength);
+  
+}
+
 void Send::quaternionData(const float qArray[]) {
     char packet[64];
     int packetLength = 0;

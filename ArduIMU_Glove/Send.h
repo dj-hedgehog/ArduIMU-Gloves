@@ -15,6 +15,7 @@ class Send {
         static void sensorData();
         static void quaternionData(const float qArray[]);
         static void miscData(const char* const charArray);
+        static void buttonState(const byte buttonNr);
     private:
         static void IntValToChars(char* const charArray, int* const index, int i);
         static char calcChecksum(const char* const packet, const int packetLength);
