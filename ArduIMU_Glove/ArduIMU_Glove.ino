@@ -28,10 +28,11 @@
 //------------------------------------------------------------------------------
 // Definitions
 
-#define FLEX_SEND_RATE      20  // packet send rates in ms
-#define SENSOR_SEND_RATE    10
-#define QUATERION_SEND_RATE 20
-#define MISC_SEND_RATE      1000
+
+#define SENSOR_SEND_RATE    10  // sensor readout rate in ms
+#define FLEX_SEND_RATE      20  // flex sensor send rates
+#define QUATERION_SEND_RATE 20  // quaternion sen rates
+#define SAMPLE_TIMER_RATE   10  // sample IMU rates
 
 //------------------------------------------------------------------------------
 // Variables
@@ -90,60 +91,56 @@ void setup() {
     strip.begin();
     strip.show(); // Initialize all pixels to 'off'
     startShow(7);
-    
-    /*delay(5);
+
     imu.init();
-    delay(5);
-*/
+
     // Init timer
-    //timer.setInterval(10, sampleTimerTasks);
-    //timer.setInterval(FLEX_SEND_RATE, Send::flexSensorData);
-    //timer.setInterval(SENSOR_SEND_RATE, Send::sensorData);
+     timer.setInterval(QUATERION_SEND_RATE, sendIMUData);
+     
+    /*delay(5);
+      timer.setInterval(SAMPLE_TIMER_RATE, sampleTimerTasks);    
+      timer.setInterval(FLEX_SEND_RATE, Send::flexSensorData);
+      timer.setInterval(SAMPLE_TIMER_RATE, getButtonState)
+    }*/
+
     
-    //timer.setInterval(QUATERION_SEND_RATE, sendIMUData);
-    
+    // timer.setInterval(SENSOR_SEND_RATE, Send::sensorData);
     // Indicate init complete
    
 
 }
 
 void loop() {
-    //timer.run();
-    //Receive::doTasks();
+  timer.run();
+  //Receive::doTasks();
+}
 
-      // Get current button state.
+void getButtonState() {
+  // Read button state.
   bool newState = digitalRead(BUTTON_PIN);
   
   // Check if state changed from high to low (button press).
   if (newState == LOW && oldState == HIGH) {
-    // Short delay to debounce button.
-    delay(20);
     // Check if button is still low after debounce.
     newState = digitalRead(BUTTON_PIN);
     if (newState == LOW) {
-
       Send::buttonState(1);
-      /*showType++;
-      if (showType > 9)
-        showType=0;
-      startShow(showType);*/
     }
   }
-
-  // Set the last button state to the old state.
   oldState = newState;
 }
 
 void sendIMUData() {
-  //imu.getQ(q);
-  Send::quaternionData(q);
+  imu.getQ(q);
+  serialPrintFloatArr(q, 4);
+  Serial.println("");
+  //Send::quaternionData(q);
 }
 
 // old code
 /*
 void sampleTimerTasks() {
 
-    
     // Read Sensor data
     //MPU6000::read();
     //I2CBus::readMagnetometer();
@@ -263,6 +260,29 @@ uint32_t Wheel(byte WheelPos) {
   } else {
    WheelPos -= 170;
    return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  }
+}
+
+void serialPrintFloatArr(float * arr, int length) {
+  for(int i=0; i<length; i++) {
+    serialFloatPrint(arr[i]);
+    Serial.print(",");
+  }
+}
+
+
+void serialFloatPrint(float f) {
+  byte * b = (byte *) &f;
+  for(int i=0; i<4; i++) {
+    
+    byte b1 = (b[i] >> 4) & 0x0f;
+    byte b2 = (b[i] & 0x0f);
+    
+    char c1 = (b1 < 10) ? ('0' + b1) : 'A' + b1 - 10;
+    char c2 = (b2 < 10) ? ('0' + b2) : 'A' + b2 - 10;
+    
+    Serial.print(c1);
+    Serial.print(c2);
   }
 }
 
