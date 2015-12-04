@@ -10,7 +10,6 @@
 //#include "Calibration.h"
 #include "Adafruit_NeoPixel.h"
 #include "FlexSensors.h"
-//#include "I2CBus.h"
 #include "MPU60X0.h"
 #include "Receive.h"
 #include "SimpleTimer.h"
@@ -79,14 +78,12 @@ void setup() {
     // Init modules
     LEDs::init();
     FlexSensors::init();
-    //MPU6000::init();
-    //I2CBus::init();
     //Calibration::init();
     VibrationMotor::init();
 
     //LEDs::setBlue(1);
     LEDs::setRed(1);
-        // RGB LED
+    // RGB LED
     pinMode(BUTTON_PIN, INPUT);
     strip.begin();
     strip.show(); // Initialize all pixels to 'off'
@@ -106,8 +103,6 @@ void setup() {
     
     // timer.setInterval(SENSOR_SEND_RATE, Send::sensorData);
     // Indicate init complete
-   
-
 }
 
 void loop() {
@@ -172,8 +167,6 @@ void startShow(int i) {
             break;
     case 8: rainbowCycle(20);
             break;
-    case 9: theaterChaseRainbow(50);
-            break;
   }
 }
 
@@ -226,24 +219,6 @@ void theaterChase(uint32_t c, uint8_t wait) {
       for (int i=0; i < strip.numPixels(); i=i+3) {
         strip.setPixelColor(i+q, 0);        //turn every third pixel off
       }
-    }
-  }
-}
-
-//Theatre-style crawling lights with rainbow effect
-void theaterChaseRainbow(uint8_t wait) {
-  for (int j=0; j < 256; j++) {     // cycle all 256 colors in the wheel
-    for (int q=0; q < 3; q++) {
-        for (int i=0; i < strip.numPixels(); i=i+3) {
-          strip.setPixelColor(i+q, Wheel( (i+j) % 255));    //turn every third pixel on
-        }
-        strip.show();
-       
-        delay(wait);
-       
-        for (int i=0; i < strip.numPixels(); i=i+3) {
-          strip.setPixelColor(i+q, 0);        //turn every third pixel off
-        }
     }
   }
 }
