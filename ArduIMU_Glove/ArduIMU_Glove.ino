@@ -9,19 +9,25 @@
 //#include "AHRS.h"
 //#include "Calibration.h"
 #include "Adafruit_NeoPixel.h"
+/*
 #include "FlexSensors.h"
 #include "MPU60X0.h"
 #include "Receive.h"
-#include "SimpleTimer.h"
 #include "Send.h"
 #include <SPI.h>    // required by MPU6000::cpp
 #include <Wire.h>   // required by I2CBus.cpp
 #include <EEPROM.h> // required by Calibration.cpp
-#include "LEDs.h"
-#include "VibrationMotor.h"
-
+*/
 // FreeIMU
+#include "HMC58X3.h"
+#include "I2Cdev.h"
+#include "MPU60X0.h"
 #include "FreeIMU.h"
+#include "SimpleTimer.h"
+#include "LEDs.h"
+#include <Wire.h>
+#include <SPI.h>
+#include "VibrationMotor.h"
 
 
 //------------------------------------------------------------------------------
@@ -62,8 +68,9 @@ float q[4];
 //   NEO_KHZ800  800 KHz bitstream (e.g. High Density LED strip), correct for neopixel stick
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(PIXEL_COUNT, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
-bool oldState = HIGH;
+bool oldState = LOW;
 int showType = 0;
+bool testVar = false;
 
 
 //------------------------------------------------------------------------------
@@ -73,41 +80,58 @@ void setup() {
 
     // Init Serial for use by Send.cpp and Receive.cpp
     Serial.begin(115200);
+    delay(100);
     Wire.begin();
-
-    // Init modules
+    VibrationMotor::init();
+    
     LEDs::init();
+    LEDs::setRed(1);
+    //imu.init(true);
+    LEDs::setRed(0);
+    // Indicate init complete
+
+    LEDs::setBlue(1);
+    
+    
+/*
+    // Init modules
+    
     FlexSensors::init();
     //Calibration::init();
-    VibrationMotor::init();
+    
 
-    //LEDs::setBlue(1);
-    LEDs::setRed(1);
+    LEDs::setBlue(1);
+
     // RGB LED
-    pinMode(BUTTON_PIN, INPUT);
+    pinMode(BUTTON_PIN, INPUT);*/
+    
     strip.begin();
     strip.show(); // Initialize all pixels to 'off'
-    startShow(7);
-
-    imu.init();
-
-    // Init timer
-     timer.setInterval(QUATERION_SEND_RATE, sendIMUData);
+    
      
-    /*delay(5);
+     
+    /*
       timer.setInterval(SAMPLE_TIMER_RATE, sampleTimerTasks);    
       timer.setInterval(FLEX_SEND_RATE, Send::flexSensorData);
-      timer.setInterval(SAMPLE_TIMER_RATE, getButtonState)
+      
     }*/
 
     
     // timer.setInterval(SENSOR_SEND_RATE, Send::sensorData);
-    // Indicate init complete
+    timer.setInterval(QUATERION_SEND_RATE, sendIMUData);
+    timer.setInterval(SAMPLE_TIMER_RATE, getButtonState);
+    //timer.setInterval(500, sendTestData);
+}
+
+void sendTestData(){
+  Serial.println("foobar");  
 }
 
 void loop() {
   timer.run();
   //Receive::doTasks();
+  // 
+  
 }
 
 void getButtonState() {
@@ -119,7 +143,15 @@ void getButtonState() {
     // Check if button is still low after debounce.
     newState = digitalRead(BUTTON_PIN);
     if (newState == LOW) {
-      Send::buttonState(1);
+      Serial.println("B0");
+      if (testVar==true){
+        colorWipe(strip.Color(100, 0, 0), 50);
+        testVar=false;
+      }
+      else {
+        colorWipe(strip.Color(0, 100, 0), 50);
+        testVar=true;
+      }
     }
   }
   oldState = newState;
@@ -132,21 +164,52 @@ void sendIMUData() {
   //Send::quaternionData(q);
 }
 
+void serialPrintFloatArr(float * arr, int length) {
+  for(int i=0; i<length; i++) {
+    serialFloatPrint(arr[i]);
+    Serial.print(",");
+  }
+}
+
+
+void serialFloatPrint(float f) {
+  byte * b = (byte *) &f;
+  for(int i=0; i<4; i++) {
+    
+    byte b1 = (b[i] >> 4) & 0x0f;
+    byte b2 = (b[i] & 0x0f);
+    
+    char c1 = (b1 < 10) ? ('0' + b1) : 'A' + b1 - 10;
+    char c2 = (b2 < 10) ? ('0' + b2) : 'A' + b2 - 10;
+    
+    Serial.print(c1);
+    Serial.print(c2);
+  }
+}
+
+// Fill the dots one after the other with a color
+void colorWipe(uint32_t c, uint8_t wait) {
+  for(uint16_t i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, c);
+      strip.show();
+      delay(wait);
+  }
+}
+
+/*
 // old code
 /*
 void sampleTimerTasks() {
-
     // Read Sensor data
     //MPU6000::read();
     //I2CBus::readMagnetometer();
-
     // Calibrate data
     //Calibration::update();
-
     // Update AHRS algorithm
     //ahrs.update(DegToRad(0.1f * Calibration::gyrX), DegToRad(0.1f * Calibration::gyrY), DegToRad(0.1f * Calibration::gyrZ), Calibration::accX, Calibration::accY, Calibration::accZ);
 }*/
 
+/*
 void startShow(int i) {
   switch(i){
     case 0: colorWipe(strip.Color(0, 0, 0), 50);    // Black/off
@@ -171,14 +234,7 @@ void startShow(int i) {
 }
 
 
-// Fill the dots one after the other with a color
-void colorWipe(uint32_t c, uint8_t wait) {
-  for(uint16_t i=0; i<strip.numPixels(); i++) {
-      strip.setPixelColor(i, c);
-      strip.show();
-      delay(wait);
-  }
-}
+
 
 void rainbow(uint8_t wait) {
   uint16_t i, j;
@@ -237,29 +293,7 @@ uint32_t Wheel(byte WheelPos) {
    return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
   }
 }
-
-void serialPrintFloatArr(float * arr, int length) {
-  for(int i=0; i<length; i++) {
-    serialFloatPrint(arr[i]);
-    Serial.print(",");
-  }
-}
-
-
-void serialFloatPrint(float f) {
-  byte * b = (byte *) &f;
-  for(int i=0; i<4; i++) {
-    
-    byte b1 = (b[i] >> 4) & 0x0f;
-    byte b2 = (b[i] & 0x0f);
-    
-    char c1 = (b1 < 10) ? ('0' + b1) : 'A' + b1 - 10;
-    char c2 = (b2 < 10) ? ('0' + b2) : 'A' + b2 - 10;
-    
-    Serial.print(c1);
-    Serial.print(c2);
-  }
-}
+*/
 
 //------------------------------------------------------------------------------
 // End of file

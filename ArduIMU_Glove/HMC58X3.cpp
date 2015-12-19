@@ -278,7 +278,7 @@ void HMC58X3::writeReg(unsigned char reg, unsigned char val) {
   Wire.beginTransmission(HMC58X3_ADDR);
   Wire.write(reg);        // send register address
   Wire.write(val);        // send value to write
-  Wire.endTransmission(); //end transmission
+  Wire.endTransmission(); //end transmission*/
 }
 
 

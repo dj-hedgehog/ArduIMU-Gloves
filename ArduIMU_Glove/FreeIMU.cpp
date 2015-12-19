@@ -32,11 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 FreeIMU::FreeIMU() {
 
-  #if HAS_HMC5883L()
-    magn = HMC58X3();
-  #endif
-
-
+  magn = HMC58X3();
   accgyro = MPU60X0(); // SPI for Arduimu v3
 
   // initialize quaternion
@@ -86,58 +82,96 @@ void FreeIMU::init(bool fastmode) {
   init(FIMU_ACCGYRO_ADDR, fastmode);
 }
 
-
 /**
  * Initialize the FreeIMU I2C bus, sensors and performs gyro offsets calibration
 */
 void FreeIMU::init(int accgyro_addr, bool fastmode) {
   delay(5);
-
-  // disable internal pullups of the ATMEGA which Wire enable by default
+  
+    // disable internal pullups of the ATMEGA which Wire enable by default
   #if defined(__AVR_ATmega168__) || defined(__AVR_ATmega8__) || defined(__AVR_ATmega328P__)
     // deactivate internal pull-ups for twi
     // as per note from atmega8 manual pg167
     cbi(PORTC, 4);
     cbi(PORTC, 5);
-  #else
+  #elif defined(__AVR__)
     // deactivate internal pull-ups for twi
     // as per note from atmega128 manual pg204
     cbi(PORTD, 0);
     cbi(PORTD, 1);
   #endif
 
-  if(fastmode) { // switch to 400KHz I2C - eheheh
-    TWBR = ((F_CPU / 400000L) - 16) / 2; // see twi_init in Wire/utility/twi.c
-  }
-
-
-  #if HAS_MPU6000()
-  accgyro = MPU60X0(true, accgyro_addr);
-  accgyro.initialize();
-  accgyro.setFullScaleGyroRange(MPU60X0_GYRO_FS_2000);
-  delay(5);
+  #if defined(__AVR__) // only valid on AVR, not on 32bit platforms (eg: Arduino 2, Teensy 3.0)
+    if(fastmode) { // switch to 400KHz I2C - eheheh
+      TWBR = ((F_CPU / 400000L) - 16) / 2; // see twi_init in Wire/utility/twi.c
+    }
+  #elif defined(__arm__)
+    if(fastmode) {
+      #if defined(CORE_TEENSY) && F_BUS == 48000000
+        I2C0_F = 0x1A;  // Teensy 3.0 at 48 or 96 MHz
+        I2C0_FLT = 2;
+      #elif defined(CORE_TEENSY) && F_BUS == 24000000
+        I2C0_F = 0x45;  // Teensy 3.0 at 24 MHz
+        I2C0_FLT = 1;
+      #endif
+    }
   #endif
-
-
-  #if HAS_HMC5883L()
-  // init HMC5843
-  magn.init(false); // Don't set mode yet, we'll do that later on.
-  // Calibrate HMC using self test, not recommended to change the gain after calibration.
-  magn.calibrate(1); // Use gain 1=default, valid 0-7, 7 not recommended.
-  // Single mode conversion was used in calibration, now set continuous mode
-  magn.setMode(0);
-  delay(10);
-  magn.setDOR(B110);
-  #endif
-
+  
+  
+    #if HAS_ADXL345()
+      // init ADXL345
+      acc.init(acc_addr);
+    #elif HAS_BMA180()
+      // init BMA180
+      acc.setAddress(acc_addr);
+      acc.SoftReset();
+      acc.enableWrite();
+      acc.SetFilter(acc.F10HZ);
+      acc.setGSensitivty(acc.G15);
+      acc.SetSMPSkip();
+      acc.SetISRMode();
+      acc.disableWrite();
+    #endif
+      
+    
+    #if HAS_MPU6050()
+    accgyro = MPU60X0(false, accgyro_addr);
+    accgyro.initialize();
+    accgyro.setI2CMasterModeEnabled(0);
+    accgyro.setI2CBypassEnabled(1);
+    accgyro.setFullScaleGyroRange(MPU60X0_GYRO_FS_2000);
+    delay(5);
+    #endif
+    
+    #if HAS_MPU6000()
+    accgyro = MPU60X0(true, accgyro_addr);
+    accgyro.initialize();
+    accgyro.setFullScaleGyroRange(MPU60X0_GYRO_FS_2000);
+    delay(5);
+    #endif 
+    
+    
+    #if HAS_HMC5883L()
+    // init HMC5843
+    magn.init(false); // Don't set mode yet, we'll do that later on.
+    // Calibrate HMC using self test, not recommended to change the gain after calibration.
+    magn.calibrate(1); // Use gain 1=default, valid 0-7, 7 not recommended.
+    // Single mode conversion was used in calibration, now set continuous mode
+    magn.setMode(0);
+    delay(10);
+    magn.setDOR(B110);
+    #endif
+    
 
   // zero gyro
   zeroGyro();
-
+  
+  
   #ifndef CALIBRATION_H
   // load calibration from eeprom
   calLoad();
   #endif
+  
 }
 
 #ifndef CALIBRATION_H
@@ -193,11 +227,23 @@ void FreeIMU::calLoad() {
  * Populates raw_values with the raw_values from the sensors
 */
 void FreeIMU::getRawValues(int * raw_values) {
-    accgyro.getMotion6(&raw_values[0], &raw_values[1], &raw_values[2], &raw_values[3], &raw_values[4], &raw_values[5]);
+
+    /*#ifdef __AVR__
+      accgyro.getMotion6(&raw_values[0], &raw_values[1], &raw_values[2], &raw_values[3], &raw_values[4], &raw_values[5]);
+    #else
+      int16_t ax, ay, az, gx, gy, gz;
+      accgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+      raw_values[0] = ax;
+      raw_values[1] = ay;
+      raw_values[2] = az;
+      raw_values[3] = gx;
+      raw_values[4] = gy;
+      raw_values[5] = gz;
+    #endif
+  #endif
   #if HAS_HMC5883L()
     magn.getValues(&raw_values[6], &raw_values[7], &raw_values[8]);
-  #endif
-
+  */
 }
 
 
@@ -249,13 +295,14 @@ void FreeIMU::zeroGyro() {
   int raw[11];
   float tmpOffsets[] = {0,0,0};
 
+  
   for (int i = 0; i < totSamples; i++){
     getRawValues(raw);
     tmpOffsets[0] += raw[3];
     tmpOffsets[1] += raw[4];
     tmpOffsets[2] += raw[5];
   }
-
+  
   gyro_off_x = tmpOffsets[0] / totSamples;
   gyro_off_y = tmpOffsets[1] / totSamples;
   gyro_off_z = tmpOffsets[2] / totSamples;

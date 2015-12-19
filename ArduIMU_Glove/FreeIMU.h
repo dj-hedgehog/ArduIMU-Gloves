@@ -24,17 +24,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef FreeIMU_h
 #define FreeIMU_h
 
-// Uncomment the appropriated version of FreeIMU you are using
-//#define FREEIMU_v01
-//#define FREEIMU_v02
-//#define FREEIMU_v03
-//#define FREEIMU_v035
-//#define FREEIMU_v035_MS
-//#define FREEIMU_v035_BMP
-//#define FREEIMU_v04
+#define ARDUIMU_v3 //  DIYDrones ArduIMU+ V3 http://store.diydrones.com/ArduIMU_V3_p/kt-arduimu-30.htm or https://www.sparkfun.com/products/11055
+
 
 // 3rd party boards. Please consider donating or buying a FreeIMU board to support this library development.
-#define ARDUIMU_v3 //  DIYDrones ArduIMU+ V3 http://store.diydrones.com/ArduIMU_V3_p/kt-arduimu-30.htm or https://www.sparkfun.com/products/11055
+#define HAS_ITG3200() (defined(FREEIMU_v01) || defined(FREEIMU_v02) || defined(FREEIMU_v03) || defined(FREEIMU_v035) || defined(FREEIMU_v035_MS) || defined(FREEIMU_v035_BMP) || defined(SEN_10121) || defined(SEN_10736) || defined(SEN_10724) || defined(SEN_10183))
+#define HAS_ADXL345() (defined(FREEIMU_v01) || defined(FREEIMU_v02) || defined(FREEIMU_v03) || defined(SEN_10121) || defined(SEN_10736) || defined(SEN_10724) || defined(SEN_10183))
+#define HAS_BMA180() (defined(FREEIMU_v035) || defined(FREEIMU_v035_MS) || defined(FREEIMU_v035_BMP))
+#define HAS_MPU6050() (defined(FREEIMU_v04) || defined(GEN_MPU6050))
+#define HAS_MS5611() (defined(FREEIMU_v035_MS) || defined(FREEIMU_v04))
+#define HAS_HMC5883L() (defined(FREEIMU_v01) || defined(ARDUIMU_v3))
+#define HAS_MPU6000() (defined(ARDUIMU_v3))
+
+#define IS_6DOM() (defined(SEN_10121) || defined(GEN_MPU6050))
+#define IS_9DOM() (defined(FREEIMU_v01) || defined(FREEIMU_v02) || defined(FREEIMU_v03) || defined(FREEIMU_v035) || defined(FREEIMU_v035_MS) || defined(FREEIMU_v035_BMP) || defined(FREEIMU_v04) || defined(SEN_10736) || defined(SEN_10724) || defined(SEN_10183) || defined(ARDUIMU_v3))
+#define HAS_AXIS_ALIGNED() (defined(FREEIMU_v01) || defined(FREEIMU_v02) || defined(FREEIMU_v03) || defined(FREEIMU_v035) || defined(FREEIMU_v035_MS) || defined(FREEIMU_v035_BMP) || defined(FREEIMU_v04) || defined(SEN_10121) || defined(SEN_10736))
+
 //#define GEN_MPU6050 // Generic MPU6050 breakout board. Compatible with GY-521, SEN-11028 and other MPU6050 wich have the MPU6050 AD0 pin connected to GND.
 
 // *** No configuration needed below this line ***
@@ -53,13 +58,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // board IDs
 #define FREEIMU_ID "DIY Drones ArduIMU+ V3"
-
-
-#define HAS_HMC5883L() (defined(ARDUIMU_v3))
-#define HAS_MPU6000() (defined(ARDUIMU_v3))
-#define IS_9DOM() (defined(ARDUIMU_v3))
-#define HAS_AXIS_ALIGNED() (defined(FREEIMU_v01) || defined(FREEIMU_v02) || defined(FREEIMU_v03) || defined(FREEIMU_v035) || defined(FREEIMU_v035_MS) || defined(FREEIMU_v035_BMP) || defined(FREEIMU_v04) || defined(SEN_10121) || defined(SEN_10736))
-
 
 
 #include <Wire.h>
@@ -117,11 +115,7 @@ class FreeIMU
     void getYawPitchRollRad(float * ypr);
     void gravityCompensateAcc(float * acc, float * q);
 
-    #if HAS_HMC5883L()
-      HMC58X3 magn;
-    #endif
-
-
+    HMC58X3 magn;
     MPU60X0 accgyro;
 
     int* raw_acc, raw_gyro, raw_magn;
